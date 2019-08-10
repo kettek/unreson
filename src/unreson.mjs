@@ -5,16 +5,18 @@
  * @copyright 2019 Ketchetwahmeegwun T. Southall <kettek1@kettek.net>
  * @license lGPL-3.0
  */
+import { EventEmitter } from 'events'
 import { diff, applyChanges, revertChanges } from 'yajsondiff'
 
 /** StateObject is a class that controls state for a provided data object. */
-export class StateObject {
+export class StateObject extends EventEmitter {
   /**
    * Sets up the passed object to be accessed and watched via state. Also sets
    * up changes-related properties.
    * @param {Object} obj
    */
   constructor(obj) {
+    super()
     this.state = obj
     this.changes = []
     this.changePosition = 0
@@ -52,25 +54,45 @@ export class StateObject {
   add(change) {
     this.changes.splice(this.changePosition++, this.changes.length, change)
   }
+
   /**
    * Undoes a change state based upon the current change position, changing the
    * underlying state and decrementing the change position.
+   * @fires StateObject#undo
    */
   undo() {
     if (this.changePosition <= 0 || this.changePosition > this.changes.length) return
-    let changedState = revertChanges(this._state, this.changes[--this.changePosition])
+    let change = this.changes[--this.changePosition]
+    let changedState = revertChanges(this._state, change)
     if (changedState == null) return
     this.state = changedState
+    /**
+     * Undo event.
+     * 
+     * @event StateObject#undo
+     * @type {object} yajsondiff change
+     */
+    this.emit('undo', change)
   }
+
   /**
    * Redoes a change state based upon the current change position, changing the
    * underlying state and incrementing the change position.
+   * @fires StateObject#redo
    */
   redo() {
     if (this.changePosition >= this.changes.length) return
-    let changedState = applyChanges(this._state, this.changes[this.changePosition++])
+    let change = this.changes[this.changePosition++]
+    let changedState = applyChanges(this._state, change)
     if (changedState == null) return
     this.state = changedState
+    /**
+     * Redo event.
+     * 
+     * @event StateObject#redo
+     * @type {object} yajsondiff change
+     */
+    this.emit('redo', change)
   }
 }
 
@@ -80,6 +102,7 @@ export class StateObject {
  * @param {StateObject} instance A StateObject instance
  * @param {Object} proxyObject The object from which to build a watched version
  * @returns {Proxy} A proxied version of the passed proxyObject
+ * @fires StateObject#change
  */
 export function setProxy(instance, proxyObject) {
   let handler = {
@@ -96,6 +119,13 @@ export function setProxy(instance, proxyObject) {
       let change = diff(lastState, instance._state)
       if (change != null) {
         instance.add(change)
+        /**
+        * Change event.
+        * 
+        * @event StateObject#change
+        * @type {object} yajsondiff change
+        */
+        instance.emit('change', change)
       }
       return true
     }
