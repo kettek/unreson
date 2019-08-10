@@ -5,9 +5,16 @@
   "main": "dist/unreson.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "babel src -d dist"
+    "build": "babel src -d dist",
+    "docs": "jsdoc-md -s src/unreson.mjs -m README.md"
   },
-  "keywords": ["json", "undo", "redo", "state", "deep"],
+  "keywords": [
+    "json",
+    "undo",
+    "redo",
+    "state",
+    "deep"
+  ],
   "author": "Ketchetwahmeegwun T. Southall",
   "license": "lGPL-3.0",
   "dependencies": {
