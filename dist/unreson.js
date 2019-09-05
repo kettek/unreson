@@ -130,17 +130,17 @@ exports.StateObject = StateObject;
 function setProxy(instance, proxyObject) {
   let handler = {
     get: function (obj, prop) {
-      return obj[prop];
+      const value = Reflect.get(obj, prop);
+
+      if (value instanceof Object) {
+        return setProxy(instance, value);
+      }
+
+      return value;
     },
     set: function (obj, prop, value) {
       let lastState = cloneObject(instance._state);
-
-      if (value instanceof Object) {
-        obj[prop] = setProxy(instance, value);
-      } else {
-        obj[prop] = value;
-      }
-
+      Reflect.set(obj, prop, value);
       let change = (0, _yajsondiff.diff)(lastState, instance._state);
 
       if (change != null) {
@@ -156,6 +156,9 @@ function setProxy(instance, proxyObject) {
       }
 
       return true;
+    },
+    deleteProperty: function (obj, prop) {
+      Reflect.deleteProperty(obj, prop);
     }
   };
   return new Proxy(proxyObject ? proxyObject : {}, handler);
