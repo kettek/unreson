@@ -94,6 +94,23 @@ export class StateObject extends EventEmitter {
      */
     this.emit('redo', change)
   }
+
+  /**
+   * Returns if the state can have undo() called.
+   * @return {Boolean}
+   */
+  undoable() {
+    if (this.changePosition == 0) return false
+    return true
+  }
+  /**
+   * Returns if the state can have redo() called.
+   * @return {Boolean}
+   */
+  redoable() {
+    if (this.changePosition >= this.changes.length) return false
+    return true
+  }
 }
 
 /**
