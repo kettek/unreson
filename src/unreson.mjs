@@ -112,7 +112,11 @@ export function setProxy(instance, proxyObject) {
     set: function (obj, prop, value) {
       let lastState = cloneObject(instance._state)
       if (value instanceof Object) {
-        obj[prop] = setProxy(instance, value)
+        if (obj[prop] instanceof Object) {
+          obj[prop] = setProxy(instance, Object.assign(obj[prop], value))
+        } else {
+          obj[prop] = setProxy(instance, value)
+        }
       } else {
         obj[prop] = value
       }
@@ -128,7 +132,12 @@ export function setProxy(instance, proxyObject) {
         instance.emit('change', change)
       }
       return true
-    }
+    },
+    deleteProperty: function(obj, prop) {
+      if (prop in obj) {
+        delete obj[prop]
+      }
+    },
   }
   return new Proxy(proxyObject ? proxyObject : {}, handler)
 }
