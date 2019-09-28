@@ -124,15 +124,31 @@ export class StateObject extends EventEmitter {
 export function setProxy(instance, proxyObject) {
   let handler = {
     get: function (obj, prop) {
+      const desc  = Object.getOwnPropertyDescriptor(obj, prop)
       const value = Reflect.get(obj, prop)
-      if (value instanceof Object) {
-        return setProxy(instance, value)
+
+      if (value === null || (typeof value !== 'object' && typeof value !== 'function')) {
+        return value
       }
-      return value
+
+      if (desc && !desc.configurable) {
+        if (desc.set && !desc.get) {
+          return undefined
+        }
+        if (!desc.writable) {
+          return value
+        }
+      }
+
+      try {
+        return setProxy(instance, value)
+      } catch (error) {
+        return value
+      }
     },
     set: function (obj, prop, value) {
       let lastState = cloneObject(instance._state)
-      Reflect.set(obj, prop, value)
+      let result = Reflect.set(obj, prop, value)
 
       let change = diff(lastState, instance._state)
       if (change != null) {
@@ -145,10 +161,7 @@ export function setProxy(instance, proxyObject) {
         */
         instance.emit('change', change)
       }
-      return true
-    },
-    deleteProperty: function(obj, prop) {
-      Reflect.deleteProperty(obj, prop)
+      return result
     },
   }
   return new Proxy(proxyObject ? proxyObject : {}, handler)
