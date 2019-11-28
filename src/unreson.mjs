@@ -47,6 +47,40 @@ export class StateObject extends EventEmitter {
   }
 
   /**
+   * Caches the current state so multiple change steps can be recorded as a
+   * single change. All changes to the underlying state data will no longer
+   * be reported until unqueue() is called.
+   */
+  queue() {
+    this._queuedState = cloneObject(this._state)
+  }
+
+  /**
+   * Unqueues the current state against the state stored by an earlier call
+   * to queue(). Any changes made to the state will be reported as a single
+   * change step.
+   * @fires StateObject#change
+   * @throws Will throw if queue() is not first called.
+   */
+  unqueue() {
+    if (!this._queuedState) {
+      throw new Error("unqueue() called without a prior call to queue()")
+    }
+    let change = diff(this._queuedState, this._state)
+    if (change != null) {
+      this.add(change)
+      /**
+      * Change event.
+      * 
+      * @event StateObject#change
+      * @type {object} yajsondiff change
+      */
+      this.emit('change', change)
+    }
+    this._queuedState = null
+  }
+
+  /**
    * Adds the given change based upon the current position, truncating the
    * array as needed.
    * @param change yajsondiff change object
@@ -147,6 +181,10 @@ export function setProxy(instance, proxyObject) {
       }
     },
     set: function (obj, prop, value) {
+      if (instance._queuedState) {
+        return Reflect.set(obj, prop, value)
+      }
+
       let lastState = cloneObject(instance._state)
       let result = Reflect.set(obj, prop, value)
 
