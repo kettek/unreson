@@ -48,17 +48,20 @@ export class StateObject extends EventEmitter {
 
   /**
    * Caches the current state so multiple change steps can be recorded as a
-   * single change. All changes to the underlying state data will no longer
-   * be reported until unqueue() is called.
+   * single change. All changes made to the underlying state data will be
+   * considered as a single undo/redo step once unqueue() is called.
+   * @param {Object} [conf] Configuration object for adjusting queue logic.
+   * @param {Object} [conf.emit=false] Emit change events for any changes made.
    */
-  queue() {
+  queue(conf={}) {
+    this._queueConfig = {...{emit: false}, ...conf}
     this._queuedState = cloneObject(this._state)
   }
 
   /**
    * Unqueues the current state against the state stored by an earlier call
-   * to queue(). Any changes made to the state will be reported as a single
-   * change step.
+   * to queue(). A change event will be emitted with the changes between the
+   * state when queue() was called and the current underlying state.
    * @fires StateObject#change
    * @throws Will throw if queue() is not first called.
    */
@@ -181,7 +184,7 @@ export function setProxy(instance, proxyObject) {
       }
     },
     set: function (obj, prop, value) {
-      if (instance._queuedState) {
+      if (instance._queuedState && !instance._queueConfig.emit) {
         return Reflect.set(obj, prop, value)
       }
 
@@ -190,7 +193,9 @@ export function setProxy(instance, proxyObject) {
 
       let change = diff(lastState, instance._state)
       if (change != null) {
-        instance.add(change)
+        if (!instance._queuedState) {
+          instance.add(change)
+        }
         /**
         * Change event.
         * 

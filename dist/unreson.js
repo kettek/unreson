@@ -60,6 +60,53 @@ class StateObject extends _events.EventEmitter {
     return JSON.stringify(this._state);
   }
   /**
+   * Caches the current state so multiple change steps can be recorded as a
+   * single change. All changes made to the underlying state data will be
+   * considered as a single undo/redo step once unqueue() is called.
+   * @param {Object} [conf] Configuration object for adjusting queue logic.
+   * @param {Object} [conf.emit=false] Emit change events for any changes made.
+   */
+
+
+  queue(conf = {}) {
+    this._queueConfig = { ...{
+        emit: false
+      },
+      ...conf
+    };
+    this._queuedState = cloneObject(this._state);
+  }
+  /**
+   * Unqueues the current state against the state stored by an earlier call
+   * to queue(). A change event will be emitted with the changes between the
+   * state when queue() was called and the current underlying state.
+   * @fires StateObject#change
+   * @throws Will throw if queue() is not first called.
+   */
+
+
+  unqueue() {
+    if (!this._queuedState) {
+      throw new Error("unqueue() called without a prior call to queue()");
+    }
+
+    let change = (0, _yajsondiff.diff)(this._queuedState, this._state);
+
+    if (change != null) {
+      this.add(change);
+      /**
+      * Change event.
+      * 
+      * @event StateObject#change
+      * @type {object} yajsondiff change
+      */
+
+      this.emit('change', change);
+    }
+
+    this._queuedState = null;
+  }
+  /**
    * Adds the given change based upon the current position, truncating the
    * array as needed.
    * @param change yajsondiff change object
@@ -150,21 +197,42 @@ exports.StateObject = StateObject;
 function setProxy(instance, proxyObject) {
   let handler = {
     get: function (obj, prop) {
+      const desc = Object.getOwnPropertyDescriptor(obj, prop);
       const value = Reflect.get(obj, prop);
 
-      if (value instanceof Object) {
-        return setProxy(instance, value);
+      if (value === null || typeof value !== 'object' && typeof value !== 'function') {
+        return value;
       }
 
-      return value;
+      if (desc && !desc.configurable) {
+        if (desc.set && !desc.get) {
+          return undefined;
+        }
+
+        if (!desc.writable) {
+          return value;
+        }
+      }
+
+      try {
+        return setProxy(instance, value);
+      } catch (error) {
+        return value;
+      }
     },
     set: function (obj, prop, value) {
+      if (instance._queuedState && !instance._queueConfig.emit) {
+        return Reflect.set(obj, prop, value);
+      }
+
       let lastState = cloneObject(instance._state);
-      Reflect.set(obj, prop, value);
+      let result = Reflect.set(obj, prop, value);
       let change = (0, _yajsondiff.diff)(lastState, instance._state);
 
       if (change != null) {
-        instance.add(change);
+        if (!instance._queuedState) {
+          instance.add(change);
+        }
         /**
         * Change event.
         * 
@@ -172,13 +240,11 @@ function setProxy(instance, proxyObject) {
         * @type {object} yajsondiff change
         */
 
+
         instance.emit('change', change);
       }
 
-      return true;
-    },
-    deleteProperty: function (obj, prop) {
-      Reflect.deleteProperty(obj, prop);
+      return result;
     }
   };
   return new Proxy(proxyObject ? proxyObject : {}, handler);
