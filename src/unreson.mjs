@@ -39,69 +39,6 @@ export class StateObject extends EventEmitter {
   }
 
   /**
-   * Get the aggregate changes from a range as an object.
-   * @param {Number} fromIndex defaults to 0
-   * @param {Number} toIndex defaults to current change position
-   * @returns {object} difference between fromIndex and toIndex as an object
-   */
-  aggregate(fromIndex=0, toIndex=this.changePosition) {
-    let a = Math.min(fromIndex, toIndex)
-    let b = Math.max(fromIndex, toIndex)
-
-    let fromState = this._state
-    let toState = this._state
-
-    if (a < this.changePosition) {
-      let changes = [].concat(...this.changes.slice(a, this.changePosition))
-      fromState = revertChanges(fromState, changes)
-    } else if (a > this.changePosition) {
-      let changes = [].concat(...this.changes.slice(this.changePosition, a))
-      fromState = applyChanges(fromState, changes)
-    }
-
-    if (b < this.changePosition) {
-      let changes = [].concat(...this.changes.slice(b, this.changePosition))
-      toState = revertChanges(toState, changes)
-    } else if (b > this.changePosition) {
-      let changes = [].concat(...this.changes.slice(this.changePosition, b))
-      toState = applyChanges(toState, changes)
-    }
-
-    return this._buildDifference(fromState, toState)
-  }
-
-  _buildDifference(o1, o2) {
-    let k, kDiff, diff = {}
-
-    for (k in o1) {
-      if (!o1.hasOwnProperty(k)) {
-        continue
-      }
-
-      if (typeof o1[k] !== 'object' || typeof o2[k] !== 'object') {
-        if (!(k in o2) || o1[k] !== o2[k]) {
-          diff[k] = o2[k]
-        }
-      } else if (kDiff = this._buildDifference(o1[k], o2[k])) {
-        diff[k] = kDiff
-      }
-    }
-
-    for (k in o2) {
-      if (o2.hasOwnProperty(k) && !(k in o1)) {
-        diff[k] = o2[k]
-      }
-    }
-
-    for (k in diff) {
-      if (diff.hasOwnProperty(k)) {
-        return diff
-      }
-    }
-    return diff
-  }
-
-  /**
    * Helper function that returns the internal state as a JSON string.
    * See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify for replacer and space parameters.
    * @param {String|Number} replacer
