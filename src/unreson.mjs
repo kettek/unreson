@@ -23,19 +23,19 @@ export class StateObject extends EventEmitter {
   }
 
   /**
-   * Sets up the internal state to match the provided object.
+   * Sets up the internal state to be a deep clone of the provided object.
    * @param {Object} v
    */
   set state(v) {
-    this._state = setProxy(this, cloneObject(v))
+    this._state = cloneObject(v)
   }
 
   /**
-   * Returns the internal state object.
+   * Returns a proxy to the internal state object.
    * @returns {Proxy}
    */
   get state() {
-    return this._state
+    return setProxy(this, this._state)
   }
 
   /**
@@ -105,7 +105,7 @@ export class StateObject extends EventEmitter {
     let change = this.changes[--this.changePosition]
     let changedState = revertChanges(this._state, change)
     if (changedState == null) return
-    this.state = changedState
+    this._state = changedState
     /**
      * Undo event.
      * 
@@ -125,7 +125,7 @@ export class StateObject extends EventEmitter {
     let change = this.changes[this.changePosition++]
     let changedState = applyChanges(this._state, change)
     if (changedState == null) return
-    this.state = changedState
+    this._state = changedState
     /**
      * Redo event.
      * 
