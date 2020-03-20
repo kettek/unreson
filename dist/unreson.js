@@ -225,11 +225,11 @@ function setProxy(instance, proxyObject) {
     },
     set: function (obj, prop, value) {
       if (instance._queuedState && !instance._queueConfig.emit) {
-        return Reflect.set(obj, prop, value);
+        return Reflect.set(obj, prop, cloneObject(value));
       }
 
       let lastState = cloneObject(instance._state);
-      let result = Reflect.set(obj, prop, value);
+      let result = Reflect.set(obj, prop, cloneObject(value));
       let change = (0, _yajsondiff.diff)(lastState, instance._state);
 
       if (change != null) {
@@ -259,12 +259,23 @@ function setProxy(instance, proxyObject) {
 
 
 function cloneObject(object) {
-  if (!object) return object;
-  let cloned = object instanceof Array ? [] : {};
+  let cloned;
 
-  for (let k in object) {
-    let v = object[k];
-    cloned[k] = v instanceof Object ? cloneObject(v) : v;
+  if (typeof object === 'number') {
+    cloned = Number(object);
+  } else if (typeof object === 'boolean') {
+    cloned = Boolean(object);
+  } else if (typeof object === 'string') {
+    cloned = String(object);
+  } else if (object == null) {
+    cloned = object;
+  } else {
+    cloned = object instanceof Array ? [] : {};
+
+    for (let k in object) {
+      let v = object[k];
+      cloned[k] = v instanceof Object ? cloneObject(v) : v;
+    }
   }
 
   return cloned;
