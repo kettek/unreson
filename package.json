@@ -1,6 +1,6 @@
 {
   "name": "unreson",
-  "version": "0.8.2",
+  "version": "0.9.0",
   "description": "Class for providing deep undo/redo state for dynamic JSON objects",
   "main": "dist/unreson.js",
   "scripts": {
