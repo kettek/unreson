@@ -31,6 +31,7 @@ class StateObject extends _events.EventEmitter {
     this.state = obj;
     this.changes = [];
     this.changePosition = 0;
+    this._frozen = false;
   }
   /**
    * Sets up the internal state to be a deep clone of the provided object.
@@ -49,6 +50,30 @@ class StateObject extends _events.EventEmitter {
 
   get state() {
     return setProxy(this, this._state);
+  }
+  /**
+   * Sets the internal state object to become immutable.
+   */
+
+
+  freeze() {
+    this._frozen = true;
+  }
+  /**
+   * Sets the internal state object to become mutable.
+   */
+
+
+  thaw() {
+    this._frozen = false;
+  }
+  /**
+   * Returns if the internal state object is immutable.
+   */
+
+
+  get frozen() {
+    return this._frozen;
   }
   /**
    * Helper function that returns the internal state as a JSON string.
@@ -128,6 +153,7 @@ class StateObject extends _events.EventEmitter {
 
   undo() {
     if (this.changePosition <= 0 || this.changePosition > this.changes.length) return;
+    if (this._frozen) return;
     let change = this.changes[--this.changePosition];
     let changedState = (0, _yajsondiff.revertChanges)(this._state, change);
     if (changedState == null) return;
@@ -150,6 +176,7 @@ class StateObject extends _events.EventEmitter {
 
   redo() {
     if (this.changePosition >= this.changes.length) return;
+    if (this._frozen) return;
     let change = this.changes[this.changePosition++];
     let changedState = (0, _yajsondiff.applyChanges)(this._state, change);
     if (changedState == null) return;
@@ -171,6 +198,7 @@ class StateObject extends _events.EventEmitter {
 
   undoable() {
     if (this.changePosition == 0) return false;
+    if (this._frozen) return false;
     return true;
   }
   /**
@@ -181,6 +209,7 @@ class StateObject extends _events.EventEmitter {
 
   redoable() {
     if (this.changePosition >= this.changes.length) return false;
+    if (this._frozen) return false;
     return true;
   }
 
@@ -224,6 +253,10 @@ function setProxy(instance, proxyObject) {
       }
     },
     set: function (obj, prop, value) {
+      if (instance._frozen) {
+        return;
+      }
+
       if (instance._queuedState && !instance._queueConfig.emit) {
         return Reflect.set(obj, prop, cloneObject(value));
       }
