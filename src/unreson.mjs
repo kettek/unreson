@@ -20,6 +20,7 @@ export class StateObject extends EventEmitter {
     this.state = obj
     this.changes = []
     this.changePosition = 0
+    this._frozen = false
   }
 
   /**
@@ -36,6 +37,27 @@ export class StateObject extends EventEmitter {
    */
   get state() {
     return setProxy(this, this._state)
+  }
+
+  /**
+   * Sets the internal state object to become immutable.
+   */
+  freeze() {
+    this._frozen = true
+  }
+
+  /**
+   * Sets the internal state object to become mutable.
+   */
+  thaw() {
+    this._frozen = false
+  }
+
+  /**
+   * Returns if the internal state object is immutable.
+   */
+  get frozen() {
+    return this._frozen
   }
 
   /**
@@ -102,6 +124,7 @@ export class StateObject extends EventEmitter {
    */
   undo() {
     if (this.changePosition <= 0 || this.changePosition > this.changes.length) return
+    if (this._frozen) return
     let change = this.changes[--this.changePosition]
     let changedState = revertChanges(this._state, change)
     if (changedState == null) return
@@ -122,6 +145,7 @@ export class StateObject extends EventEmitter {
    */
   redo() {
     if (this.changePosition >= this.changes.length) return
+    if (this._frozen) return
     let change = this.changes[this.changePosition++]
     let changedState = applyChanges(this._state, change)
     if (changedState == null) return
@@ -141,6 +165,7 @@ export class StateObject extends EventEmitter {
    */
   undoable() {
     if (this.changePosition == 0) return false
+    if (this._frozen) return false
     return true
   }
   /**
@@ -149,6 +174,7 @@ export class StateObject extends EventEmitter {
    */
   redoable() {
     if (this.changePosition >= this.changes.length) return false
+    if (this._frozen) return false
     return true
   }
 }
@@ -187,8 +213,11 @@ export function setProxy(instance, proxyObject) {
       }
     },
     set: function (obj, prop, value) {
-     if (instance._queuedState && !instance._queueConfig.emit) {
-       return Reflect.set(obj, prop, cloneObject(value))
+      if (instance._frozen) {
+        return
+      }
+      if (instance._queuedState && !instance._queueConfig.emit) {
+        return Reflect.set(obj, prop, cloneObject(value))
       }
 
       let lastState = cloneObject(instance._state)
