@@ -2,8 +2,8 @@
  * A module for providing deep undo/redo state for dynamic JSON objects.
  * @module unreson
  * @author Ketchetwahmeegwun T. Southall / kts of kettek
- * @copyright 2019 Ketchetwahmeegwun T. Southall <kettek1@kettek.net>
- * @license lGPL-3.0
+ * @copyright 2019-2020 Ketchetwahmeegwun T. Southall <kettek1@kettek.net>
+ * @license MPL-2.0
  */
 import { EventEmitter } from 'events'
 import { diff, applyChanges, revertChanges } from 'yajsondiff'

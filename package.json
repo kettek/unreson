@@ -16,7 +16,7 @@
     "deep"
   ],
   "author": "Ketchetwahmeegwun T. Southall",
-  "license": "lGPL-3.0",
+  "license": "MPL-2.0",
   "dependencies": {
     "yajsondiff": "^2.0.0"
   },
