@@ -8,12 +8,14 @@
 import { EventEmitter } from 'events'
 import { diff, applyChanges, revertChanges } from 'yajsondiff'
 
-/** StateObject is a class that controls state for a provided data object. */
+/**
+* StateObject is a class that controls state for a provided data object.
+*/
 export class StateObject extends EventEmitter {
   /**
    * Sets up the passed object to be accessed and watched via state. Also sets
    * up changes-related properties.
-   * @param {Object} obj
+   * @param {Object} obj The object from which to construct a stateful internal representation from.
    */
   constructor(obj) {
     super()
