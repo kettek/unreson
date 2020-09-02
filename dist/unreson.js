@@ -15,16 +15,18 @@ var _yajsondiff = require("yajsondiff");
  * A module for providing deep undo/redo state for dynamic JSON objects.
  * @module unreson
  * @author Ketchetwahmeegwun T. Southall / kts of kettek
- * @copyright 2019 Ketchetwahmeegwun T. Southall <kettek1@kettek.net>
- * @license lGPL-3.0
+ * @copyright 2019-2020 Ketchetwahmeegwun T. Southall <kettek1@kettek.net>
+ * @license MPL-2.0
  */
 
-/** StateObject is a class that controls state for a provided data object. */
+/**
+* StateObject is a class that controls state for a provided data object.
+*/
 class StateObject extends _events.EventEmitter {
   /**
    * Sets up the passed object to be accessed and watched via state. Also sets
    * up changes-related properties.
-   * @param {Object} obj
+   * @param {Object} obj The object from which to construct a stateful internal representation from.
    */
   constructor(obj) {
     super();
@@ -211,6 +213,54 @@ class StateObject extends _events.EventEmitter {
     if (this.changePosition >= this.changes.length) return false;
     if (this._frozen) return false;
     return true;
+  }
+  /**
+   * Restores the StateObject, including undo/redo history, from an object.
+   * @param {Object} o A StateObject representation as created by the store() call.
+   */
+
+
+  restore(o) {
+    if (o.state) {
+      this.state = o.state;
+    }
+
+    if (o.queueConfig) {
+      this._queueConfig = cloneObject(o.queueConfig);
+    }
+
+    if (o.queuedState) {
+      this._queuedState = cloneObject(o.queuedState);
+    }
+
+    if (o.changes) {
+      this.changes = cloneObject(o.changes);
+    }
+
+    if (o.changePosition) {
+      this.changePosition = o.changePosition;
+    }
+
+    if (o.frozen) {
+      this.freeze();
+    }
+  }
+  /**
+   * Returns an Object representation of the full StateObject. The result of this
+   * can be used to restore the full StateObject, including undo/redo history.
+   * @returns {Object} A cloned representation of the entire StateObject structure.
+   */
+
+
+  store() {
+    return cloneObject({
+      state: this._state,
+      queueConfig: this._queueConfig,
+      queuedState: this._queuedState,
+      changes: this.changes,
+      changePosition: this.changePosition,
+      frozen: this._frozen
+    });
   }
 
 }
