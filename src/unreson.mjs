@@ -162,6 +162,23 @@ export class StateObject extends EventEmitter {
   }
 
   /**
+   * Returns a cloned state representing the state at the target change position.
+   * @param {Number} pos Change state position to acquire a cloned object from.
+   * @return {Object}
+   */
+  get(pos) {
+    if (pos > this.changes.length) return
+    if (pos < 0) return
+    let state = cloneObject(this._state)
+    if (pos < this.changePosition) {
+      state = revertChanges(state, this.changes.slice(pos, this.changePosition).flat())
+    } else if (pos > this.changePosition) {
+      state = applyChanges(state, this.changes.slice(this.changePosition, pos).flat())
+    }
+    return state
+  }
+
+  /**
    * Returns if the state can have undo() called.
    * @return {Boolean}
    */
