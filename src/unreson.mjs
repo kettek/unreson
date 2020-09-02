@@ -179,6 +179,46 @@ export class StateObject extends EventEmitter {
     if (this._frozen) return false
     return true
   }
+
+  /**
+   * Restores the StateObject, including undo/redo history, from an object.
+   * @param {Object} o A StateObject representation as created by the store() call.
+   */
+  restore(o) {
+    if (o.state) {
+      this.state = o.state
+    }
+    if (o.queueConfig) {
+      this._queueConfig = cloneObject(o.queueConfig)
+    }
+    if (o.queuedState) {
+      this._queuedState = cloneObject(o.queuedState)
+    }
+    if (o.changes) {
+      this.changes = cloneObject(o.changes)
+    }
+    if (o.changePosition) {
+      this.changePosition = o.changePosition
+    }
+    if (o.frozen) {
+      this.freeze()
+    }
+  }
+  /**
+   * Returns an Object representation of the full StateObject. The result of this
+   * can be used to restore the full StateObject, including undo/redo history.
+   * @returns {Object} A cloned representation of the entire StateObject structure.
+   */
+  store() {
+    return cloneObject({
+      state: this._state,
+      queueConfig: this._queueConfig,
+      queuedState: this._queuedState,
+      changes: this.changes,
+      changePosition: this.changePosition,
+      frozen: this._frozen,
+    })
+  }
 }
 
 /**
