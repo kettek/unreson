@@ -282,6 +282,18 @@ class StateObject extends _events.EventEmitter {
       frozen: this._frozen
     });
   }
+  /**
+   * Clears the undo/redo history, position information, and queue properties.
+   * This renders the current state as the only state.
+   */
+
+
+  clear() {
+    this.changes = [];
+    this.changePosition = 0;
+    this._queuedState = null;
+    this._queueConfig = undefined;
+  }
 
 }
 /**
