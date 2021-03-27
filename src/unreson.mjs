@@ -307,6 +307,32 @@ export function setProxy(instance, proxyObject) {
       }
       return result
     },
+    deleteProperty: function (obj, prop) {
+      if (instance._frozen) {
+        return
+      }
+      if (instance._queuedState && !instance._queueConfig.emit) {
+        return Reflect.deleteProperty(obj, prop)
+      }
+
+      let lastState = cloneObject(instance._state)
+      let result = Reflect.deleteProperty(obj, prop)
+
+      let change = diff(lastState, instance._state)
+      if (change != null) {
+        if (!instance._queuedState) {
+          instance.add(change)
+        }
+        /**
+        * Change event.
+        * 
+        * @event StateObject#change
+        * @type {object} yajsondiff change
+        */
+        instance.emit('change', change)
+      }
+      return result
+    },
   }
   return new Proxy(proxyObject ? proxyObject : {}, handler)
 }
