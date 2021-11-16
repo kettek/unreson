@@ -1,11 +1,12 @@
 {
   "name": "unreson",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "description": "Class for providing deep undo/redo state for dynamic JSON objects",
   "main": "dist/unreson.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "babel src -d dist"
+    "build": "babel src -d dist && rimraf dist/unreson.d.ts src/*.d.ts && tsc",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "json",
@@ -17,11 +18,14 @@
   "author": "Ketchetwahmeegwun T. Southall",
   "license": "MPL-2.0",
   "dependencies": {
+    "@types/node": "^16.11.7",
     "yajsondiff": "^2.0.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.5.5",
     "@babel/core": "^7.5.5",
-    "@babel/plugin-transform-modules-commonjs": "^7.5.0"
+    "@babel/plugin-transform-modules-commonjs": "^7.5.0",
+    "rimraf": "^3.0.2",
+    "typescript": "^4.1.5"
   }
 }
