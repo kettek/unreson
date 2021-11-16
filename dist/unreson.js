@@ -80,8 +80,8 @@ class StateObject extends _events.EventEmitter {
   /**
    * Helper function that returns the internal state as a JSON string.
    * See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify for replacer and space parameters.
-   * @param {String|Number} replacer
-   * @param {String|Number} space
+   * @param {String[]|Number[]|null} replacer
+   * @param {String|Number|null} space
    * @returns {String} JSON string
    */
 
